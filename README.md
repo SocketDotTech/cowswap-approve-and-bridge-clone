@@ -1,66 +1,44 @@
-## Foundry
+## Approve and Bridge
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+> [!CAUTION]
+> This is a proof of concept, not a production-ready contract!
+> It needs to be properly reviewed and audited before actually using it.
 
-Foundry consists of:
+A helper contract to support the swap-and-bridge feature through CoW Protocol.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+Each supported bridge has its own dedicated helper contract.
 
-## Documentation
+The helper contract is intended to be delegatecalled from a CoW Shed contract instance.
+See the forked tests in `test/e2e/` for usage details.
 
-https://book.getfoundry.sh/
-
-## Usage
+## Development
 
 ### Build
 
 ```shell
-$ forge build
+forge build
 ```
 
 ### Test
 
 ```shell
-$ forge test
+forge test
 ```
 
 ### Format
 
 ```shell
-$ forge fmt
+forge fmt
 ```
 
 ### Gas Snapshots
 
 ```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
+forge snapshot
 ```
 
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+forge script script/Deploy.s.sol:DeployScript --rpc-url <your_rpc_url> --private-key <your_private_key>
 ```
