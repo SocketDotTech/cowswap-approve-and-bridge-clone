@@ -73,6 +73,7 @@ contract E2EOmnibridgeApproveAndBridgeTest is Test {
         // from an order.
         vm.prank(user);
         WETH.transfer(address(shed), orderProceeds);
+        assertEq(WETH.balanceOf(address(shed)), orderProceeds);
 
         COWShed.Call[] memory calls = new COWShed.Call[](1);
         calls[0] = COWShed.Call({
@@ -94,6 +95,7 @@ contract E2EOmnibridgeApproveAndBridgeTest is Test {
             messageId: bytes32(0)
         });
         shed.trustedExecuteHooks(calls);
+        assertEq(WETH.balanceOf(address(shed)), 0);
     }
 
     function test_notEnoughFunds() external {
@@ -124,11 +126,13 @@ contract E2EOmnibridgeApproveAndBridgeTest is Test {
         vm.prank(address(factory));
         vm.expectRevert("Bridging less than min amount");
         shed.trustedExecuteHooks(calls);
+        assertEq(WETH.balanceOf(address(shed)), minProceeds - 1);
 
         // The same hook can still be used if more funds become available
         vm.prank(user);
         WETH.transfer(address(shed), 1);
         vm.prank(address(factory));
         shed.trustedExecuteHooks(calls);
+        assertEq(WETH.balanceOf(address(shed)), 0);
     }
 }
