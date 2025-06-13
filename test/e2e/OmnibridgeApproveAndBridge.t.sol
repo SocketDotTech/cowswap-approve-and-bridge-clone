@@ -60,9 +60,9 @@ contract E2EOmnibridgeApproveAndBridgeTest is Test {
         // However, it's easier to build the test without handling the
         // authentication part needed for that and use `trustedExecuteHooks`
         // through the factory instead.
+        factory.initializeProxy(user, false);
         COWShed shed = COWShed(factory.proxyOf(user));
         vm.label(address(shed), "shed");
-        factory.initializeProxy(user, false);
         assertGt(address(shed).code.length, 0);
 
         uint256 orderProceeds = 1_337 ether;
@@ -104,9 +104,9 @@ contract E2EOmnibridgeApproveAndBridgeTest is Test {
         // However, it's easier to build the test without handling the
         // authentication part needed for that and use `trustedExecuteHooks`
         // through the factory instead.
+        factory.initializeProxy(user, false);
         COWShed shed = COWShed(factory.proxyOf(user));
         vm.label(address(shed), "shed");
-        factory.initializeProxy(user, false);
         assertGt(address(shed).code.length, 0);
 
         uint256 minProceeds = 42 ether;
