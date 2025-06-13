@@ -6,11 +6,11 @@ import {Test, console} from "forge-std/Test.sol";
 import {IOmnibridge, OmnibridgeApproveAndBridge} from "src/OmnibridgeApproveAndBridge.sol";
 
 contract OmnibridgeApproveAndBridgeTest is Test {
-    OmnibridgeApproveAndBridge public counter;
+    OmnibridgeApproveAndBridge public approveAndBridge;
     IOmnibridge omnibridge;
 
     function setUp() public {
         omnibridge = IOmnibridge(makeAddr("OmnibridgeApproveAndBridgeTest: omnibridge"));
-        counter = new OmnibridgeApproveAndBridge(omnibridge);
+        approveAndBridge = new OmnibridgeApproveAndBridge(omnibridge);
     }
 }
