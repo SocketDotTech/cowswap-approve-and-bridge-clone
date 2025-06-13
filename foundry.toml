@@ -5,7 +5,7 @@ libs = ["lib"]
 
 # Compiler options
 solc = "0.8.30"
-evm_version = "prague" # https://docs.soliditylang.org/en/latest/using-the-compiler.html#target-options
+evm_version = "prague" # https://docs.soliditylang.org/en/v0.8.30/using-the-compiler.html#target-options
 bytecode_hash = "none"
 cbor_metadata = false
 optimizer = true
