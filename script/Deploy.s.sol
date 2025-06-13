@@ -16,7 +16,7 @@ contract DeployScript is Script {
             omnibridgeApproveAndBridge = new OmnibridgeApproveAndBridge(MAINNET_OMNIBRIDGE);
             console.log("Deployed OmnibridgeApproveAndBridge at: ", address(omnibridgeApproveAndBridge));
         } else {
-            console2.log("Skipping deployment of OmnibridgeApproveAndBridge on network other than mainnet");
+            console.log("Skipping deployment of OmnibridgeApproveAndBridge on network other than mainnet");
         }
     }
 }
