@@ -14,6 +14,9 @@ contract DeployScript is Script {
         if (block.chainid == 1) {
             vm.broadcast();
             omnibridgeApproveAndBridge = new OmnibridgeApproveAndBridge(MAINNET_OMNIBRIDGE);
+            console.log("Deployed OmnibridgeApproveAndBridge at: ", address(omnibridgeApproveAndBridge));
+        } else {
+            console2.log("Skipping deployment of OmnibridgeApproveAndBridge on network other than mainnet");
         }
     }
 }
