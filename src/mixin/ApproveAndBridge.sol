@@ -10,16 +10,20 @@ abstract contract ApproveAndBridge is IApproveAndBridge {
 
     /// @dev This function isn't intended to be called directly, it should be
     /// delegatecalled instead.
-    function approveAndBridge(IERC20 token, uint256 minAmount, address receiver) external {
+    function approveAndBridge(IERC20 token, uint256 minAmount, address receiver, uint256 toChainId, bytes calldata data)
+        external
+    {
         uint256 balance = token.balanceOf(address(this));
         require(balance >= minAmount, "Bridging less than min amount");
 
         token.forceApprove(bridgeApprovalTarget(), balance);
 
-        bridge(token, balance, receiver);
+        bridge(token, balance, receiver, toChainId, data);
     }
 
     function bridgeApprovalTarget() public view virtual returns (address);
 
-    function bridge(IERC20 token, uint256 amount, address receiver) internal virtual;
+    function bridge(IERC20 token, uint256 amount, address receiver, uint256 toChainId, bytes calldata data)
+        internal
+        virtual;
 }
