@@ -40,7 +40,9 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         if (!isVerified) revert InvalidInput();
 
         // execute using the modified calldata via SocketGateway.fallback()
-        (bool success,) = address(socketGateway).call(modifiedCalldata);
+        (bool success,) = address(token) == NATIVE_TOKEN_ADDRESS
+            ? address(socketGateway).call{value: amount}(modifiedCalldata)
+            : address(socketGateway).call(modifiedCalldata);
         if (!success) revert BridgeFailed();
     }
 

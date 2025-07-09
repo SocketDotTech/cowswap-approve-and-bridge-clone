@@ -8,16 +8,27 @@ import {SafeERC20} from "../vendored/SafeERC20.sol";
 abstract contract ApproveAndBridge is IApproveAndBridge {
     using SafeERC20 for IERC20;
 
+    /// @dev Address used to represent the native token
+    address public constant NATIVE_TOKEN_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
     /// @dev This function isn't intended to be called directly, it should be
     /// delegatecalled instead.
     function approveAndBridge(IERC20 token, uint256 minAmount, address receiver, uint256 toChainId, bytes calldata data)
         external
     {
-        uint256 balance = token.balanceOf(address(this));
+        // get the balance of the token
+        uint256 balance =
+            address(token) == NATIVE_TOKEN_ADDRESS ? address(this).balance : token.balanceOf(address(this));
+
+        // check if the balance is greater than the minAmount
         require(balance >= minAmount, "Bridging less than min amount");
 
-        token.forceApprove(bridgeApprovalTarget(), balance);
+        // approve the bridgeApprovalTarget if ERC20
+        if (address(token) != NATIVE_TOKEN_ADDRESS) {
+            token.forceApprove(bridgeApprovalTarget(), balance);
+        }
 
+        // bridge the token
         bridge(token, balance, receiver, toChainId, data);
     }
 
