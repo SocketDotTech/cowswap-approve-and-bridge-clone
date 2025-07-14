@@ -13,4 +13,14 @@ library ForkedRpc {
         }
         forkId = vm.createSelectFork(forkUrl, blockNumber);
     }
+
+    function forkBaseAtBlock(Vm vm, uint256 blockNumber) internal returns (uint256 forkId) {
+        string memory forkUrl;
+        try vm.envString("BASE_ARCHIVE_NODE_URL") returns (string memory url) {
+            forkUrl = url;
+        } catch {
+            forkUrl = "https://base.drpc.org";
+        }
+        forkId = vm.createSelectFork(forkUrl, blockNumber);
+    }
 }
