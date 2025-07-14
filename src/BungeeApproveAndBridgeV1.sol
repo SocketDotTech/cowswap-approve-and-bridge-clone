@@ -35,35 +35,32 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
     }
 
     function _parseAndModifyCalldata(uint256 amount, bytes calldata data) internal pure returns (bytes memory) {
-        // decode data as calldata for SocketGateway.fallback()
-
-        // Next: routeExecutionCalldata (up to data.length - extraDataLength)
+        // Calculate the length of the route execution calldata (excluding the extra data struct)
         uint256 extraDataLength = 32 * 3;
-        if (data.length < 4 + extraDataLength) revert InvalidInput();
-        bytes memory routeExecutionCalldata = data[4:data.length - extraDataLength];
+        if (data.length < extraDataLength + 4) revert InvalidInput();
+        uint256 routeCalldataLength = data.length - extraDataLength;
 
-        // 2. Decode the extra data struct
-        bytes memory extraData = data[data.length - 32 * 4:];
-        (uint256 inputAmountStartIndex, bool modifyOutputAmount, uint256 outputAmountStartIndex) =
-            abi.decode(extraData, (uint256, bool, uint256));
+        // Extract the route execution calldata and extra data struct
+        bytes memory routeCalldata = data[:routeCalldataLength];
+        (uint256 inputIdx, bool modifyOutput, uint256 outputIdx) =
+            abi.decode(data[routeCalldataLength:], (uint256, bool, uint256));
 
-        // 4. Replace input amount in calldata
-        bytes memory modifiedCalldata =
-            _replaceUint256({_original: routeExecutionCalldata, _start: inputAmountStartIndex, _amount: amount});
+        // Read the original input amount from the calldata
+        uint256 originalInput = _readUint256({_data: routeCalldata, _index: inputIdx});
 
-        // 5. If needed, also replace output amount
+        // Replace the input amount in the calldata
+        bytes memory modifiedCalldata = _replaceUint256({_original: routeCalldata, _start: inputIdx, _amount: amount});
+
+        // Optionally replace the output amount if required
         // in case of bridges like Across, need to modify both input and output amounts
         // - decode current input and output amounts from calldata
         // - calculate and apply the percentage diff bw new and old input amount on the old output amount
         // - replace the output amount at the index with the new amount
         // - assumes output amount is always uint256 in SocketGateway impls
-        if (modifyOutputAmount) {
-            uint256 inputAmountOriginal = _readUint256({_data: routeExecutionCalldata, _index: inputAmountStartIndex});
-            uint256 outputAmountOriginal = _readUint256({_data: routeExecutionCalldata, _index: outputAmountStartIndex});
-            uint256 newOutputAmount =
-                _applyPctDiff({_base: inputAmountOriginal, _compare: amount, _target: outputAmountOriginal});
-            modifiedCalldata =
-                _replaceUint256({_original: modifiedCalldata, _start: outputAmountStartIndex, _amount: newOutputAmount});
+        if (modifyOutput) {
+            uint256 originalOutput = _readUint256({_data: routeCalldata, _index: outputIdx});
+            uint256 newOutput = _applyPctDiff({_base: originalInput, _compare: amount, _target: originalOutput});
+            modifiedCalldata = _replaceUint256({_original: modifiedCalldata, _start: outputIdx, _amount: newOutput});
         }
 
         return modifiedCalldata;
