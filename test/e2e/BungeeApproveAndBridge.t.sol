@@ -76,6 +76,7 @@ contract E2EBungeeApproveAndBridgeTest is Test {
         // uint256 inputAmountStartIndex = 8;
         // bool modifyOutputAmount = true;
         // uint256 outputAmountStartIndex = 488;
+        // uint256 additionalValue = 0;
 
         /* CCTP */
         bytes memory BungeeApiCalldata =
@@ -83,8 +84,10 @@ contract E2EBungeeApproveAndBridgeTest is Test {
         uint256 inputAmountStartIndex = 8;
         bool modifyOutputAmount = false;
         uint256 outputAmountStartIndex = 0;
+        uint256 additionalValue = 0;
 
-        bytes memory extraData = abi.encode(inputAmountStartIndex, modifyOutputAmount, outputAmountStartIndex);
+        bytes memory extraData =
+            abi.encode(inputAmountStartIndex, modifyOutputAmount, outputAmountStartIndex, additionalValue);
         bytes memory _calldata = abi.encodePacked(BungeeApiCalldata, extraData);
 
         COWShed.Call[] memory calls = new COWShed.Call[](1);

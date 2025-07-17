@@ -13,6 +13,17 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
     error PositionOutOfBounds();
     error BridgeFailed();
 
+    struct ModifyCalldataParams {
+        uint256 inputAmountIdx;
+        bool modifyOutput;
+        uint256 outputAmountIdx;
+        uint256 additionalValue;
+    }
+
+    uint32 private constant EXTRA_DATA_PARAMS_COUNT = 4;
+    uint32 private constant EXTRA_DATA_LENGTH_BYTES = 32;
+    uint32 private constant EXTRA_DATA_LENGTH = EXTRA_DATA_PARAMS_COUNT * EXTRA_DATA_LENGTH_BYTES;
+
     ISocketGateway immutable socketGateway;
 
     constructor(ISocketGateway socketGateway_) {
@@ -39,21 +50,15 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         pure
         returns (bytes memory, uint256)
     {
-        // Calculate the length of the route execution calldata (excluding the extra data struct)
-        uint256 extraDataLength = 32 * 4;
-        if (data.length < extraDataLength + 4) revert InvalidInput();
-        uint256 routeCalldataLength = data.length - extraDataLength;
-
-        // Extract the route execution calldata and extra data struct
-        bytes memory routeCalldata = data[:routeCalldataLength];
-        (uint256 inputIdx, bool modifyOutput, uint256 outputIdx, uint256 additionalValue) =
-            abi.decode(data[routeCalldataLength:], (uint256, bool, uint256, uint256));
+        // Parse the data into route calldata and extra data
+        (bytes memory routeCalldata, ModifyCalldataParams memory modifyCalldataParams) = _parseCalldata(data);
 
         // Read the original input amount from the calldata
-        uint256 originalInput = _readUint256({_data: routeCalldata, _index: inputIdx});
+        uint256 originalInput = _readUint256({_data: routeCalldata, _index: modifyCalldataParams.inputAmountIdx});
 
         // Replace the input amount in the calldata
-        bytes memory modifiedCalldata = _replaceUint256({_original: routeCalldata, _start: inputIdx, _amount: amount});
+        bytes memory modifiedCalldata =
+            _replaceUint256({_original: routeCalldata, _start: modifyCalldataParams.inputAmountIdx, _amount: amount});
 
         // Optionally replace the output amount if required
         // in case of bridges like Across, need to modify both input and output amounts
@@ -61,13 +66,37 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         // - calculate and apply the percentage diff bw new and old input amount on the old output amount
         // - replace the output amount at the index with the new amount
         // - assumes output amount is always uint256 in SocketGateway impls
-        if (modifyOutput) {
-            uint256 originalOutput = _readUint256({_data: routeCalldata, _index: outputIdx});
+        if (modifyCalldataParams.modifyOutput) {
+            uint256 originalOutput = _readUint256({_data: routeCalldata, _index: modifyCalldataParams.outputAmountIdx});
             uint256 newOutput = _applyPctDiff({_base: originalInput, _compare: amount, _target: originalOutput});
-            modifiedCalldata = _replaceUint256({_original: modifiedCalldata, _start: outputIdx, _amount: newOutput});
+            modifiedCalldata = _replaceUint256({
+                _original: modifiedCalldata,
+                _start: modifyCalldataParams.outputAmountIdx,
+                _amount: newOutput
+            });
         }
 
-        return (modifiedCalldata, additionalValue);
+        return (modifiedCalldata, modifyCalldataParams.additionalValue);
+    }
+
+    function _parseCalldata(bytes calldata _data) internal pure returns (bytes memory, ModifyCalldataParams memory) {
+        // Calculate the length of the route execution calldata (excluding the extra data struct)
+        if (_data.length < EXTRA_DATA_LENGTH + 4) revert InvalidInput();
+        uint256 routeCalldataLength = _data.length - EXTRA_DATA_LENGTH;
+
+        // Extract the route execution calldata
+        bytes memory routeCalldata = _data[:routeCalldataLength];
+
+        // Extract the extra data struct
+        ModifyCalldataParams memory modifyCalldataParams;
+        (
+            modifyCalldataParams.inputAmountIdx,
+            modifyCalldataParams.modifyOutput,
+            modifyCalldataParams.outputAmountIdx,
+            modifyCalldataParams.additionalValue
+        ) = abi.decode(_data[routeCalldataLength:], (uint256, bool, uint256, uint256));
+
+        return (routeCalldata, modifyCalldataParams);
     }
 
     function _replaceUint256(bytes memory _original, uint256 _start, uint256 _amount)
@@ -86,6 +115,22 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         }
 
         return _original;
+    }
+
+    // Helper to read a uint256 at a given byte index in a bytes array
+    function _readUint256(bytes memory _data, uint256 _index) internal pure returns (uint256 value) {
+        if (_data.length < _index + 32) revert PositionOutOfBounds();
+        assembly {
+            value := mload(add(add(_data, 0x20), _index))
+        }
+    }
+
+    function _applyPctDiff(uint256 _base, uint256 _compare, uint256 _target) internal pure returns (uint256) {
+        if (_compare > _base) {
+            return _addPctDiff(_base, _compare, _target);
+        } else {
+            return _subPctDiff(_base, _compare, _target);
+        }
     }
 
     /// @notice Calculates positive percentage difference between two numbers and applies it to a third number
@@ -118,21 +163,5 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         uint256 difference = ((_base - _compare) * 1e18) / _base;
         // Apply percentage decrease
         return _target - ((_target * difference) / 1e18);
-    }
-
-    function _applyPctDiff(uint256 _base, uint256 _compare, uint256 _target) internal pure returns (uint256) {
-        if (_compare > _base) {
-            return _addPctDiff(_base, _compare, _target);
-        } else {
-            return _subPctDiff(_base, _compare, _target);
-        }
-    }
-
-    // Helper to read a uint256 at a given byte index in a bytes array
-    function _readUint256(bytes memory _data, uint256 _index) internal pure returns (uint256 value) {
-        if (_data.length < _index + 32) revert PositionOutOfBounds();
-        assembly {
-            value := mload(add(add(_data, 0x20), _index))
-        }
     }
 }
