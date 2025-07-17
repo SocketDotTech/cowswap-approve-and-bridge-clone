@@ -20,9 +20,9 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         uint256 additionalValue;
     }
 
-    uint32 private constant EXTRA_DATA_PARAMS_COUNT = 4;
-    uint32 private constant EXTRA_DATA_LENGTH_BYTES = 32;
-    uint32 private constant EXTRA_DATA_LENGTH = EXTRA_DATA_PARAMS_COUNT * EXTRA_DATA_LENGTH_BYTES;
+    uint8 private constant EXTRA_DATA_PARAMS_COUNT = 4;
+    uint8 private constant EXTRA_DATA_LENGTH_BYTES = 32;
+    uint8 private constant EXTRA_DATA_LENGTH = EXTRA_DATA_PARAMS_COUNT * EXTRA_DATA_LENGTH_BYTES;
 
     ISocketGateway immutable socketGateway;
 
