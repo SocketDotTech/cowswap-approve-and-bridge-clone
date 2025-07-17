@@ -25,25 +25,29 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
 
     function bridge(IERC20 token, uint256 amount, bytes calldata data) internal override {
         // decode & parse data to find positions in calldata to modify
-        bytes memory modifiedCalldata = _parseAndModifyCalldata(amount, data);
+        (bytes memory modifiedCalldata, uint256 additionalValue) = _parseAndModifyCalldata(amount, data);
 
         // execute using the modified calldata via SocketGateway.fallback()
         (bool success,) = address(token) == NATIVE_TOKEN_ADDRESS
-            ? address(socketGateway).call{value: amount}(modifiedCalldata)
-            : address(socketGateway).call(modifiedCalldata);
+            ? address(socketGateway).call{value: amount + additionalValue}(modifiedCalldata)
+            : address(socketGateway).call{value: additionalValue}(modifiedCalldata);
         if (!success) revert BridgeFailed();
     }
 
-    function _parseAndModifyCalldata(uint256 amount, bytes calldata data) internal pure returns (bytes memory) {
+    function _parseAndModifyCalldata(uint256 amount, bytes calldata data)
+        internal
+        pure
+        returns (bytes memory, uint256)
+    {
         // Calculate the length of the route execution calldata (excluding the extra data struct)
-        uint256 extraDataLength = 32 * 3;
+        uint256 extraDataLength = 32 * 4;
         if (data.length < extraDataLength + 4) revert InvalidInput();
         uint256 routeCalldataLength = data.length - extraDataLength;
 
         // Extract the route execution calldata and extra data struct
         bytes memory routeCalldata = data[:routeCalldataLength];
-        (uint256 inputIdx, bool modifyOutput, uint256 outputIdx) =
-            abi.decode(data[routeCalldataLength:], (uint256, bool, uint256));
+        (uint256 inputIdx, bool modifyOutput, uint256 outputIdx, uint256 additionalValue) =
+            abi.decode(data[routeCalldataLength:], (uint256, bool, uint256, uint256));
 
         // Read the original input amount from the calldata
         uint256 originalInput = _readUint256({_data: routeCalldata, _index: inputIdx});
@@ -63,7 +67,7 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
             modifiedCalldata = _replaceUint256({_original: modifiedCalldata, _start: outputIdx, _amount: newOutput});
         }
 
-        return modifiedCalldata;
+        return (modifiedCalldata, additionalValue);
     }
 
     function _replaceUint256(bytes memory _original, uint256 _start, uint256 _amount)
