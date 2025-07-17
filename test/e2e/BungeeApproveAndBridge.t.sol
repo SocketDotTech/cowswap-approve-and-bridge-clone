@@ -4,7 +4,7 @@ pragma solidity ^0.8;
 import {Test, Vm} from "forge-std/Test.sol";
 
 import {ForkedRpc} from "./lib/ForkedRpc.sol";
-import {BungeeApproveAndBridge, IERC20} from "src/BungeeApproveAndBridgeV1.sol";
+import {BungeeApproveAndBridge, IERC20} from "src/BungeeApproveAndBridge.sol";
 
 import {IApproveAndBridge} from "src/interface/IApproveAndBridge.sol";
 import {ISocketGateway} from "src/interface/ISocketGateway.sol";
@@ -76,6 +76,7 @@ contract E2EBungeeApproveAndBridgeTest is Test {
         // uint256 inputAmountStartIndex = 8;
         // bool modifyOutputAmount = true;
         // uint256 outputAmountStartIndex = 488;
+        // uint256 additionalValue = 0;
 
         /* CCTP */
         bytes memory BungeeApiCalldata =
@@ -83,15 +84,17 @@ contract E2EBungeeApproveAndBridgeTest is Test {
         uint256 inputAmountStartIndex = 8;
         bool modifyOutputAmount = false;
         uint256 outputAmountStartIndex = 0;
+        uint256 additionalValue = 0;
 
-        bytes memory extraData = abi.encode(inputAmountStartIndex, modifyOutputAmount, outputAmountStartIndex);
+        bytes memory extraData =
+            abi.encode(inputAmountStartIndex, modifyOutputAmount, outputAmountStartIndex, additionalValue);
         bytes memory _calldata = abi.encodePacked(BungeeApiCalldata, extraData);
 
         COWShed.Call[] memory calls = new COWShed.Call[](1);
         calls[0] = COWShed.Call({
             target: address(approveAndBridge),
             value: 0,
-            callData: abi.encodeCall(IApproveAndBridge.approveAndBridge, (USDC, minProceeds, receiver, _calldata)),
+            callData: abi.encodeCall(IApproveAndBridge.approveAndBridge, (USDC, minProceeds, _calldata)),
             allowFailure: false,
             isDelegateCall: true
         });
