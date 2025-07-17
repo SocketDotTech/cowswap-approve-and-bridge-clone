@@ -13,9 +13,7 @@ abstract contract ApproveAndBridge is IApproveAndBridge {
 
     /// @dev This function isn't intended to be called directly, it should be
     /// delegatecalled instead.
-    function approveAndBridge(IERC20 token, uint256 minAmount, address receiver, uint256 toChainId, bytes calldata data)
-        external
-    {
+    function approveAndBridge(IERC20 token, uint256 minAmount, bytes calldata data) external {
         // get the balance of the token
         uint256 balance =
             address(token) == NATIVE_TOKEN_ADDRESS ? address(this).balance : token.balanceOf(address(this));
@@ -29,12 +27,10 @@ abstract contract ApproveAndBridge is IApproveAndBridge {
         }
 
         // bridge the token
-        bridge(token, balance, receiver, toChainId, data);
+        bridge(token, balance, data);
     }
 
     function bridgeApprovalTarget() public view virtual returns (address);
 
-    function bridge(IERC20 token, uint256 amount, address receiver, uint256 toChainId, bytes calldata data)
-        internal
-        virtual;
+    function bridge(IERC20 token, uint256 amount, bytes calldata data) internal virtual;
 }

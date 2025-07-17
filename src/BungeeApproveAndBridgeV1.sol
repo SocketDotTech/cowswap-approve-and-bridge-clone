@@ -23,7 +23,7 @@ contract BungeeApproveAndBridge is ApproveAndBridge {
         return address(socketGateway);
     }
 
-    function bridge(IERC20 token, uint256 amount, address receiver, bytes calldata data) internal override {
+    function bridge(IERC20 token, uint256 amount, bytes calldata data) internal override {
         // decode & parse data to find positions in calldata to modify
         bytes memory modifiedCalldata = _parseAndModifyCalldata(amount, data);
 
